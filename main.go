@@ -2,9 +2,10 @@ package main
 
 import (
 	. "final/project/objects"
-	rl "github.com/gen2brain/raylib-go/raylib"
 	"math"
 	"strconv"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 type GameState int
@@ -33,17 +34,26 @@ func main() {
 		"player2Right":    rl.KeyRight,
 		"player2Up":       rl.KeyUp,
 		"player2Down":     rl.KeyDown,
+		"player2Ability1": rl.KeyRightControl,
+		"cheatPlayer2Die": rl.KeyF1,
 	}
+
+	deadSprite := rl.LoadTexture("resources/sprites/deadplayer.png")
 
 	dungeon := NewDungeon(60, 33)
 	dungeon.Generate(uint64(420), uint64(69))
 
 	camera := rl.NewCamera2D(rl.Vector2Zero(), rl.Vector2Zero(), 0, 2)
 
-	x, y := dungeon.GetSpawnPoint(REDSPAWN)
-	player1 := NewPlayer(x, y, rl.Red)
-	x, y = dungeon.GetSpawnPoint(BLUESPAWN)
-	player2 := NewPlayer(x, y, rl.Blue)
+	x, y := dungeon.GetSpawnPoint(RED)
+	player1 := NewPlayer(x, y, rl.Red, 100)
+	x, y = dungeon.GetSpawnPoint(BLUE)
+	player2 := NewPlayer(x, y, rl.Blue, 100)
+
+	dungeon.AddPlayer(player1)
+	dungeon.AddPlayer(player2)
+
+	bombs := make([]Bomb, 0)
 
 	var timer float32 = TIMER
 	gameState := PLAYING
@@ -57,7 +67,7 @@ func main() {
 			gameState = OVER
 		}
 
-		ManageInput(Keymaps, dungeon, player1, player2, gameState)
+		ManageInput(Keymaps, dungeon, player1, player2, gameState, &bombs)
 
 		rl.BeginDrawing()
 		rl.BeginMode2D(camera)
@@ -65,10 +75,14 @@ func main() {
 
 		dungeon.DrawDungeon()
 
-		player1.PaintFloor(dungeon)
-		player2.PaintFloor(dungeon)
-		player1.Draw(dungeon)
-		player2.Draw(dungeon)
+		for _, player := range dungeon.Players {
+			player.Update(dungeon, deadSprite)
+		}
+
+		for _, bomb := range bombs {
+			bomb.Update(&bombs, dungeon)
+			bomb.Draw()
+		}
 
 		rl.EndMode2D()
 
@@ -98,7 +112,7 @@ func DrawText(text string, size int32, color rl.Color) {
 	rl.DrawText(text, int32(rl.GetScreenWidth()/2)-(textWidth/2), 10, size, color)
 }
 
-func ManageInput(keys map[string]int32, dungeon Dungeon, player1 *Player, player2 *Player, gameState GameState) {
+func ManageInput(keys map[string]int32, dungeon Dungeon, player1 *Player, player2 *Player, gameState GameState, bombs *[]Bomb) {
 	if gameState == PLAYING {
 		if rl.IsKeyPressed(keys["player1Up"]) {
 			player1.Move(UP, dungeon, player2)
@@ -108,6 +122,8 @@ func ManageInput(keys map[string]int32, dungeon Dungeon, player1 *Player, player
 			player1.Move(LEFT, dungeon, player2)
 		} else if rl.IsKeyPressed(keys["player1Right"]) {
 			player1.Move(RIGHT, dungeon, player2)
+		} else if rl.IsKeyPressed(keys["player1Ability1"]) {
+			player1.UseAbility1(dungeon, bombs)
 		} else if rl.IsKeyPressed(keys["player2Up"]) {
 			player2.Move(UP, dungeon, player1)
 		} else if rl.IsKeyPressed(keys["player2Down"]) {
@@ -116,6 +132,12 @@ func ManageInput(keys map[string]int32, dungeon Dungeon, player1 *Player, player
 			player2.Move(LEFT, dungeon, player1)
 		} else if rl.IsKeyPressed(keys["player2Right"]) {
 			player2.Move(RIGHT, dungeon, player1)
+		} else if rl.IsKeyPressed(keys["player2Ability1"]) {
+			player2.UseAbility1(dungeon, bombs)
+		}
+
+		if rl.IsKeyPressed(keys["cheatPlayer2Die"]) {
+			player2.Health = 0
 		}
 	}
 }

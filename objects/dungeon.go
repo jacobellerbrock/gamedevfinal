@@ -33,6 +33,7 @@ type Dungeon struct {
 	FloorPositions []rl.Vector2
 	Width          int
 	Height         int
+	Players        []*Player
 }
 
 type Room struct {
@@ -70,6 +71,7 @@ func NewDungeon(width, height int) Dungeon {
 	dungeon.BlockSize = int(dotTexture.Width)
 
 	dungeon.FloorPositions = make([]rl.Vector2, 0)
+	dungeon.Players = make([]*Player, 0)
 	return dungeon
 }
 
@@ -83,6 +85,10 @@ func (d *Dungeon) PlaceBlock(block Block, x, y int) {
 
 func (d *Dungeon) GetBlock(x, y int) Block {
 	return d.Blocks[x][y]
+}
+
+func (d *Dungeon) GetBlockPosition(x, y int) rl.Vector2 {
+	return rl.Vector2{X: float32(x * d.BlockSize), Y: float32(y * d.BlockSize)}
 }
 
 func (d *Dungeon) DrawDungeon() {
@@ -284,10 +290,12 @@ func (d *Dungeon) Generate(seed1, seed2 uint64) {
 	}
 }
 
-func (d *Dungeon) GetSpawnPoint(color int) (int, int) {
+func (d *Dungeon) GetSpawnPoint(color Color) (int, int) {
 	for x := 0; x < d.Width; x++ {
 		for y := 0; y < d.Height; y++ {
-			if int(d.Blocks[x][y]) == color {
+			if int(d.Blocks[x][y]) == REDSPAWN && color == RED {
+				return x, y
+			} else if int(d.Blocks[x][y]) == BLUESPAWN && color == BLUE {
 				return x, y
 			}
 		}
@@ -319,4 +327,8 @@ func (d *Dungeon) GetWinner() Color {
 		return BLUE
 	}
 	return WHITE
+}
+
+func (d *Dungeon) AddPlayer(player *Player) {
+	d.Players = append(d.Players, player)
 }
