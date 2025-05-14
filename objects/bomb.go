@@ -13,7 +13,7 @@ type Bomb struct {
 	Color       rl.Color
 }
 
-func NewBomb(position rl.Vector2, radius int, timer float32, playerColor Color) Bomb {
+func NewBomb(position rl.Vector2, radius int, timer float32, playerColor Color, gameState *int) Bomb {
 	var bombColor rl.Color
 	if playerColor == RED {
 		bombColor = rl.NewColor(120, 20, 0, 255)
@@ -23,21 +23,23 @@ func NewBomb(position rl.Vector2, radius int, timer float32, playerColor Color) 
 	return Bomb{
 		Position:    position,
 		Radius:      radius,
-		Timer:       NewTimer(timer, false),
+		Timer:       NewTimer(timer, false, gameState),
 		PlayerColor: playerColor,
 		Color:       bombColor,
 	}
 }
 
-func (b *Bomb) Update(bombs *[]Bomb, dungeon Dungeon) {
-	b.Timer.Update()
+func (b *Bomb) Update(bombs *[]Bomb, dungeon Dungeon, gameState *int, explodeSound rl.Sound) {
+	b.Timer.Update(gameState)
+	b.Draw(dungeon)
 	if b.Timer.IsDone() {
 		b.Explode(bombs, dungeon)
+		rl.PlaySound(explodeSound)
 	}
 }
 
-func (b *Bomb) Draw() {
-	rl.DrawCircle(int32(b.Position.X), int32(b.Position.Y), float32(b.Radius), b.Color)
+func (b *Bomb) Draw(dungeon Dungeon) {
+	rl.DrawCircle(int32(b.Position.X)+int32(dungeon.BlockSize)/2, int32(b.Position.Y)+int32(dungeon.BlockSize)/2, float32(b.Radius), b.Color)
 }
 
 func (b *Bomb) Explode(bombs *[]Bomb, dungeon Dungeon) {

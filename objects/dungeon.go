@@ -213,8 +213,10 @@ func (dungeon *Dungeon) AttemptStamp(r Room) bool {
 func (d *Dungeon) Generate(seed1, seed2 uint64) {
 	//clear old blocks out of grid
 	d.Blocks = make([][]Block, d.Width)
+	d.Colors = make([][]Color, d.Width)
 	for x := 0; x < d.Width; x++ {
 		d.Blocks[x] = make([]Block, d.Height)
+		d.Colors[x] = make([]Color, d.Height)
 	}
 
 	pcg := rand.NewPCG(seed1, seed2)

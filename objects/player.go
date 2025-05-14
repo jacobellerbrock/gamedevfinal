@@ -48,10 +48,11 @@ func NewPlayer(x int, y int, color rl.Color, maxHealth float32) *Player {
 	return &player
 }
 
-func (p *Player) Update(dungeon Dungeon, deadSprite rl.Texture2D) {
+func (p *Player) Update(dungeon Dungeon, deadSprite rl.Texture2D, gameState *int, deathSound rl.Sound) {
 	if p.Health <= 0 {
 		if !p.IsDead {
-			go p.Dead(dungeon)
+			rl.PlaySound(deathSound)
+			go p.Dead(dungeon, gameState)
 		}
 	} else {
 		p.PaintFloor(dungeon)
@@ -71,8 +72,8 @@ func (p *Player) PaintFloor(d Dungeon) {
 	d.Colors[p.Position.X][p.Position.Y] = p.ColorID
 }
 
-func (p *Player) UseAbility1(d Dungeon, bombs *[]Bomb) {
-	*bombs = append(*bombs, NewBomb(d.GetBlockPosition(p.Position.X, p.Position.Y), 3, 3, p.ColorID))
+func (p *Player) UseAbility1(d Dungeon, bombs *[]Bomb, gameState *int) {
+	*bombs = append(*bombs, NewBomb(d.GetBlockPosition(p.Position.X, p.Position.Y), 3, 3, p.ColorID, gameState))
 }
 
 func (p *Player) Move(direction int, dungeon Dungeon, otherPlayer *Player) {
@@ -100,10 +101,10 @@ func (p *Player) Move(direction int, dungeon Dungeon, otherPlayer *Player) {
 	}
 }
 
-func (p *Player) Dead(dungeon Dungeon) {
+func (p *Player) Dead(dungeon Dungeon, gameState *int) {
 	p.IsDead = true
 
-	deathTimer := NewTimer(2, true)
+	deathTimer := NewTimer(2, true, gameState)
 	for !deathTimer.IsDone() {
 		time.Sleep(1 * time.Millisecond)
 	}
